@@ -16,14 +16,14 @@
     "upgrade:next": "npm i cdk8s@next cdk8s-cli@next"
   },
   "dependencies": {
-    "cdk8s": "^0.21.0",
+    "cdk8s": "^0.22.0-pre.0bf8dfd6a8346b8b2f0e33eac0a2ed32d384c387",
     "constructs": "^2.0.1"
   },
   "devDependencies": {
     "@types/jest": "^25.2.3",
     "@types/js-yaml": "^3.12.4",
     "@types/node": "^14.0.5",
-    "cdk8s-cli": "^0.21.0",
+    "cdk8s-cli": "^0.22.0-pre.0bf8dfd6a8346b8b2f0e33eac0a2ed32d384c387",
     "jest": "^26.0.1",
     "js-yaml": "^3.14.0",
     "ts-jest": "^26.0.0",

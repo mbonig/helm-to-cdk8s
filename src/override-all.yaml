@@ -214,6 +214,7 @@ timezone: America/Denver
 # Deployment Annotations
 deploymentAnnotations: {}
 
+
 # To be added to the database server pod(s)
 podAnnotations:
   annotation1: something

@@ -1,7 +1,7 @@
 import {Construct, ConstructOptions, Node} from "constructs";
 import {Deployment, PodSecurityContext, Probe, ResourceRequirements, Secret} from "../imports/k8s";
 import {base64} from "../test/utils";
-import {randAlphaNum} from "./utils";
+import {undefinedIfEmpty, randAlphaNum} from "./utils";
 import {Chart} from "cdk8s";
 
 export interface ExtraVolume {
@@ -216,7 +216,7 @@ export class MySql extends Construct {
                     "app": "release-name-mysql",
                     "release": "release-name"
                 },
-                annotations: this.options.deploymentAnnotations,
+                annotations: undefinedIfEmpty(this.options.deploymentAnnotations),
                 name: "release-name-mysql",
             },
             spec: {
@@ -229,11 +229,11 @@ export class MySql extends Construct {
                             "release": "release-name",
                             ...this.options.podLabels
                         },
-                        annotations: this.options.podAnnotations
+                        annotations: undefinedIfEmpty(this.options.podAnnotations)
                     },
                     spec: {
                         containers: [{
-                            args: this.options.args,
+                            args: undefinedIfEmpty(this.options.args),
                             env: env,
                             "image": `${this.options.image}:${this.options.imageTag}`,
                             "imagePullPolicy": this.options.imagePullPolicy,
