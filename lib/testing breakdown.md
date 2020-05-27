@@ -41,7 +41,7 @@
 |Deployment|configuration volumes [src/templates/deployment.yaml:228]()|variant-1
 |Deployment|extra volumes [src/templates/deployment.yaml:251]()|variant-1
 |---|---|---
-|ConfigMap|configurationfiles [src/templates/configurationFiles-configmap.yaml:1]()|variant-1
+|ConfigMap|configuration files [src/templates/configurationFiles-configmap.yaml:1]()|variant-1
 |ConfigMap|initialization files [src/templates/initializationFiles-configmap.yaml:1]()|variant-1
 |---|---|---
 |PersistentVolumeClaim|pvc created [src/templates/pvc.yaml:1]()|default
@@ -49,10 +49,10 @@
 |PersistentVolumeClaim|storageClass [src/templates/pvc.yaml:22]()|variant-1
 |---|---|---
 |Secret|is created [src/templates/secrets.yaml:1]() |default
-|Secret|is not created [src/templates/secrets.yaml:1]() |variant-2/variant-1
+|Secret|is not created [src/templates/secrets.yaml:1]() |variant-1/2/3 
 |Secret|provided passwords [src/templates/secrets.yaml:16]() | variant-1
 |Secret|provided passwords [src/templates/secrets.yaml:18]() | variant-2
-|Secret|provided passwords [src/templates/secrets.yaml:22]() | variant-1
+|Secret|provided passwords [src/templates/secrets.yaml:22]() | variant-3
 |Secret|ssl cert [src/templates/secrets.yaml:30] | variant-1
 |---|---|---
 |ServiceAccount|created [src/templates/serviceaccount.yaml:1] | variant-1

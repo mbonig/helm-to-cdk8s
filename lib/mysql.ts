@@ -1,5 +1,14 @@
 import {Construct, ConstructOptions, Node} from "constructs";
-import {Deployment, PodSecurityContext, Probe, ResourceRequirements, Secret, Volume, VolumeMount} from "../imports/k8s";
+import {
+    Deployment,
+    LocalObjectReference,
+    PodSecurityContext,
+    Probe,
+    ResourceRequirements,
+    Secret,
+    Volume,
+    VolumeMount
+} from "../imports/k8s";
 import {base64} from "../test/utils";
 import {getKeys, randAlphaNum, undefinedIfEmpty} from "./utils";
 import {Chart} from "cdk8s";
@@ -22,7 +31,7 @@ export interface ExtraInitContainer {
     command: string[];
 }
 
-interface Persistence {
+export interface Persistence {
     enabled: boolean;
     accessMode: string;
     size: string;
@@ -30,72 +39,78 @@ interface Persistence {
     subPath?: string;
 }
 
-interface Metrics {
+export interface ReadinessLivenessProbe {
+    initialDelaySeconds: number;
+    timeoutSeconds: number;
+}
+
+export interface ServiceMonitor {
+    enabled: false;
+    additionalLabels: any;
+}
+
+export interface Metrics {
     enabled: boolean;
     image: string;
     imageTag: string;
     imagePullPolicy: ImagePullPolicy;
     resources: ResourceRequirements;
-    annotations: {};
-    livenessProbe: { initialDelaySeconds: 15, timeoutSeconds: 5 };
-    readinessProbe: { initialDelaySeconds: 5, timeoutSeconds: 1 };
-    flags: [];
-    serviceMonitor: { enabled: false, additionalLabels: {} };
+    annotations: any;
+    livenessProbe: ReadinessLivenessProbe;
+    readinessProbe: ReadinessLivenessProbe;
+    flags: string[];
+    serviceMonitor: ServiceMonitor;
 }
 
-interface Service {
-    annotations: {};
-    type: 'ClusterIP';
-    port: 3306;
+export interface Service {
+    annotations: any;
+    type: string;
+    port: number;
 }
 
-interface ServiceAccount {
+export interface ServiceAccount {
     create: false;
 }
 
-interface Certificate {
+export interface Certificate {
     name: string;
     ca: string;
     cert: string;
     key: string;
 }
 
-interface Ssl {
+export interface Ssl {
     enabled: boolean;
     secret: string;
     certificates: Certificate[];
 }
 
-interface InitContainer {
+export interface InitContainer {
     resources: ResourceRequirements
 }
 
-enum ImagePullPolicy {
+export enum ImagePullPolicy {
     'Always' = "Always",
     'Never' = "Never",
     'IfNotPresent' = "IfNotPresent"
 }
 
-interface TestFramework {
+export interface TestFramework {
     enabled: boolean;
     image: string;
     tag: string;
 }
 
-interface Busybox {
+export interface Busybox {
     image: string;
     tag: string;
 }
 
-interface Strategy {
+export interface Strategy {
     type: string;
 }
 
-interface ImagePullSecrets {
-    name: string;
-}
-
-interface PodSecurityContextEnabled extends PodSecurityContext {
+export interface PodSecurityContextEnabled extends PodSecurityContext {
     enabled: boolean;
 }
 
@@ -105,7 +120,7 @@ export interface MySqlOptions extends ConstructOptions {
     nameOverride?: string;
     fullnameOverride?: string;
     schedulerName: string;
-    imagePullSecrets: ImagePullSecrets[];
+    imagePullSecrets?: LocalObjectReference[];
     args: string[];
     image: string;
     imageTag: string;
@@ -148,21 +163,23 @@ export interface MySqlOptions extends ConstructOptions {
 export class MySql extends Construct {
     private readonly releaseName: string;
     private readonly fullname: string;
-    // @ts-ignore
-    private chart: Node;
-    private secretName: string = "";
+    private readonly chart: Node;
+    private readonly secretName: string = "";
 
     constructor(scope: Construct, id: string, private options: MySqlOptions) {
         super(scope, id, options);
+
         this.chart = Node.of(Chart.of(this));
         this.releaseName = this.chart.id;
         this.fullname = this.getFullname();
+        this.secretName = `${this.releaseName}-mysql`;
+
         this.createSecrets();
         this.createDeployment();
     }
 
     private createDeployment() {
-        let liveAndReadinessProbeCommands = [
+        const liveAndReadinessProbeCommands = [
             ...(this.options.mysqlAllowEmptyPassword ?
                 [
                     'mysqladmin', 'ping'
@@ -174,7 +191,7 @@ export class MySql extends Construct {
                 ]),
 
         ];
-        let volumeMounts: VolumeMount[] = [
+        const volumeMounts: VolumeMount[] = [
             {
                 mountPath: "/var/lib/mysql",
                 name: "data",
@@ -183,13 +200,11 @@ export class MySql extends Construct {
         ];
 
         if (undefinedIfEmpty(this.options.configurationFiles)) {
-            // @ts-ignore
             for (const {key} of getKeys(this.options.configurationFiles)) {
                 volumeMounts.push({
                     name: 'configurations',
                     mountPath: `${this.options.configurationFilesPath}${key}`,
                     subPath: key
-
                 });
             }
         }
@@ -202,7 +217,9 @@ export class MySql extends Construct {
         }
 
 
-        if (this.options.ssl?.enabled) volumeMounts.push({"mountPath": "/ssl", "name": "certificates"});
+        if (this.options.ssl?.enabled) {
+            volumeMounts.push({"mountPath": "/ssl", "name": "certificates"});
+        }
         if (this.options.extraVolumeMounts) {
             for (const extraVolumeMount of this.options.extraVolumeMounts) {
                 // @ts-ignore
@@ -210,7 +227,7 @@ export class MySql extends Construct {
             }
         }
 
-        let env = [
+        const env = [
             this.options.allowEmptyRootPassword ? {
                 name: "MYSQL_ALLOW_EMPTY_PASSWORD",
                 value: "true"
@@ -243,25 +260,37 @@ export class MySql extends Construct {
             }
         ];
 
-        this.options.timezone && env.push({name: "TZ", value: this.options.timezone});
+        if (this.options.timezone) {
+            env.push({name: "TZ", value: this.options.timezone});
+        }
 
-        let volumes: Volume[] = [];
+        const volumes: Volume[] = [];
 
-        !!undefinedIfEmpty(this.options.configurationFiles) && volumes.push({
-            name: 'configurations',
-            configMap: {name: `${this.fullname}-configuration`}
-        });
+        if (!!undefinedIfEmpty(this.options.configurationFiles)) {
+            volumes.push({
+                name: 'configurations',
+                configMap: {name: `${this.fullname}-configuration`}
+            });
+        }
 
-        !!undefinedIfEmpty(this.options.initializationFiles) && volumes.push({
-            name: 'migrations',
-            configMap: {name: `${this.fullname}-initialization`}
-        })
+        if (!!undefinedIfEmpty(this.options.initializationFiles)) {
+            volumes.push({
+                name: 'migrations',
+                configMap: {name: `${this.fullname}-initialization`}
+            });
+        }
 
-        this.options.ssl.enabled && volumes.push({name: 'certificates', secret: {secretName: this.options.ssl.secret}});
+        if (this.options.ssl.enabled) {
+            volumes.push({name: 'certificates', secret: {secretName: this.options.ssl.secret}});
+        }
+
         volumes.push({"name": "data", "persistentVolumeClaim": {"claimName": `${this.releaseName}-mysql`}});
-        this.options.extraVolumes && this.options.extraVolumes.forEach(x => volumes.push(x));
 
-        let initContainers = [
+        if (this.options.extraVolumes) {
+            this.options.extraVolumes.forEach(x => volumes.push(x));
+        }
+
+        const initContainers = [
             {
                 "command": ["rm", "-fr", "/var/lib/mysql/lost+found"],
                 "image": `${this.options.busybox.image}:${this.options.busybox.tag}`,
@@ -276,7 +305,7 @@ export class MySql extends Construct {
             }
         ];
 
-        let metricsEnv = [];
+        const metricsEnv = [];
 
         if (!this.options.mysqlAllowEmptyPassword) {
             metricsEnv.push({
@@ -290,8 +319,9 @@ export class MySql extends Construct {
             });
         }
 
-
-        this.options.extraInitContainers && this.options.extraInitContainers.forEach((x: any) => initContainers.push(x));
+        if (this.options.extraInitContainers) {
+            this.options.extraInitContainers.forEach((x: any) => initContainers.push(x));
+        }
 
         let containers: any[] = [{
             args: undefinedIfEmpty(this.options.args),
@@ -304,7 +334,7 @@ export class MySql extends Construct {
                 },
                 ...this.options.livenessProbe
             },
-            name: "release-name-mysql",
+            name: `${this.releaseName}-mysql`,
             ports: [{"containerPort": 3306, "name": "mysql"}],
             readinessProbe: {
                 exec: {
@@ -340,23 +370,23 @@ export class MySql extends Construct {
             });
         }
 
+        let labels = {
+            "app": `${this.releaseName}-mysql`,
+            "release": this.releaseName
+        };
         new Deployment(this, 'deployment', {
             metadata: {
-                labels: {
-                    "app": "release-name-mysql",
-                    "release": "release-name"
-                },
+                labels: labels,
                 annotations: undefinedIfEmpty(this.options.deploymentAnnotations),
-                name: "release-name-mysql",
+                name: `${this.releaseName}-mysql`,
             },
             spec: {
-                selector: {"matchLabels": {"app": "release-name-mysql", "release": "release-name"}},
+                selector: {"matchLabels": labels},
                 strategy: {"type": "Recreate"},
                 template: {
                     metadata: {
                         labels: {
-                            "app": "release-name-mysql",
-                            "release": "release-name",
+                            ...labels,
                             ...this.options.podLabels
                         },
                         annotations: undefinedIfEmpty(this.options.podAnnotations)
@@ -383,7 +413,6 @@ export class MySql extends Construct {
     }
 
     private createSecrets() {
-        let secretName = this.secretName = `${(this.releaseName)}-mysql`;
         if (this.options.ssl?.enabled && !!this.options.ssl.certificates) {
             for (const cert of this.options.ssl.certificates) {
                 new Secret(this, cert.name, {
@@ -391,8 +420,8 @@ export class MySql extends Construct {
                     metadata: {
                         name: cert.name,
                         labels: {
-                            app: secretName,
-                            release: `${(this.releaseName)}`,
+                            app: this.secretName,
+                            release: `${this.releaseName}`,
                         }
                     },
                     data: {
@@ -411,15 +440,16 @@ export class MySql extends Construct {
             else if (!this.options.allowEmptyRootPassword) data["mysql-root-password"] = base64(randAlphaNum(10));
 
             if (this.options.mysqlPassword) data["mysql-password"] = base64(this.options.mysqlPassword);
-            // this is ver-batem copied but I don't like it, seems wrong
+
+            // this is verbatim copy but I don't like it, seems wrong
             else if (!this.options.allowEmptyRootPassword) data["mysql-password"] = base64(randAlphaNum(10));
 
             new Secret(this, 'mysql-creds', {
                 type: 'Opaque',
                 metadata: {
-                    name: secretName,
+                    name: this.secretName,
                     labels: {
-                        app: secretName,
+                        app: this.secretName,
                         release: this.releaseName,
                     }
                 },

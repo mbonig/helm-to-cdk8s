@@ -28,3 +28,34 @@ Determine test for each resource type
 determine number of snapshots you'll need
 generate the snapshots
 fill in the tests.
+
+get all Values used:
+```
+cat deployment.yaml| grep -iEo '.Values.([a-z0-9_.]*)'
+```
+
+Kinds of code worth reviewing:
+* ```
+  name: {{ template "mysql.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  // basic reference  
+  ```
+* ```
+  {{- with .Values.deploymentAnnotations }}
+    annotations:
+  {{ toYaml . | indent 4 }}
+  // passthrough yaml
+  ```
+* ```
+  {{- if .Values.schedulerName }}
+    schedulerName: "{{ .Values.schedulerName }}"
+  {{- end }}
+  // a safety/empty check      
+  ```
+* ```
+  {{- if not (and .Values.allowEmptyRootPassword (not .Values.mysqlRootPassword)) }}
+  - name: MYSQL_ROOT_PASSWORD
+  // more complicated if logic        
+  ```
+  
+  
