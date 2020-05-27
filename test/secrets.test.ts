@@ -1,6 +1,7 @@
 import {App, Chart, Testing} from "cdk8s";
 import {MySql, MySqlOptions} from "../lib/mysql";
 import {byKind, getYaml, readAndClean, tpl} from "./utils";
+import {Secret} from "../imports/k8s";
 
 describe('secrets', () => {
     let mysqlSecret = (x: any) => x.metadata.name !== "mysql-ssl-certs";
@@ -12,7 +13,6 @@ describe('secrets', () => {
         return chart;
     }
 
-
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
@@ -21,8 +21,6 @@ describe('secrets', () => {
             defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
             defaultValues.extraVolumeMounts = tpl(defaultValues.extraVolumeMounts);
             defaultValues.extraInitContainers = tpl(defaultValues.extraInitContainers);
-
-            console.log(defaultValues);
         });
 
         it('default - creates mysql root secret', () => {
@@ -47,11 +45,11 @@ describe('secrets', () => {
         });
     });
 
-    describe('using override-all.yaml', () => {
+    describe('using variant-1.yaml', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/override-all.yaml');
+            hasSecretsValues = getYaml('../src/variant-1.yaml');
 
             hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
             hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
@@ -64,7 +62,7 @@ describe('secrets', () => {
                 ...hasSecretsValues
             });
 
-            const expected = byKind.Secret(readAndClean('override-all.snapshot.yaml'));
+            const expected = byKind.Secret(readAndClean('variant-1.snapshot.yaml'));
             let mysqlSslCertSecret = (x: any) => x.metadata.name === "mysql-ssl-certs";
             const expectedResource = expected.find(mysqlSslCertSecret);
 
@@ -80,7 +78,7 @@ describe('secrets', () => {
             });
 
             // get the resource from the snapshot we want
-            let expectedResource: any = byKind.Secret(readAndClean('override-all.snapshot.yaml'))
+            let expectedResource: any = byKind.Secret(readAndClean('variant-1.snapshot.yaml'))
                 .find(mysqlSecret);
 
             // synth the chart
@@ -90,6 +88,72 @@ describe('secrets', () => {
             const actualResource = byKind.Secret(actual).find(mysqlSecret);
 
             // check for toMatchObject (not a complete deep-equals)
+            expect(actualResource).toMatchObject(expectedResource);
+        });
+
+    })
+
+    describe('using variant-2.yaml', () => {
+        let hasSecretsValues: MySqlOptions;
+
+        beforeAll(() => {
+            hasSecretsValues = getYaml('../src/variant-2.yaml');
+
+            hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
+            hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
+            hasSecretsValues.extraInitContainers = tpl(hasSecretsValues.extraInitContainers);
+        });
+
+
+        it(`secret isn't created`, () => {
+            // create the chart
+            const chart = getChart({
+                ...hasSecretsValues
+            });
+
+            // synth the chart
+            let actual = Testing.synth(chart);
+
+            // get the actual resource created
+            const actualResource = byKind.Secret(actual).find(mysqlSecret);
+
+            // check it doesn't exist
+            expect(actualResource).toBeFalsy();
+        });
+
+    });
+
+    describe('using variant-3.yaml', () => {
+        let hasSecretsValues: MySqlOptions;
+
+        beforeAll(() => {
+            hasSecretsValues = getYaml('../src/variant-3.yaml');
+
+            hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
+            hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
+            hasSecretsValues.extraInitContainers = tpl(hasSecretsValues.extraInitContainers);
+        });
+
+
+        it(`secret has blank passwords`, () => {
+            // create the chart
+            const chart = getChart({
+                ...hasSecretsValues
+            });
+
+            // get the resource from the snapshot we want
+            let expectedResource: any = byKind.Secret(readAndClean('variant-3.snapshot.yaml'))
+                .find(mysqlSecret);
+
+
+            // synth the chart
+            let actual = Testing.synth(chart);
+
+            // get the actual resource created
+            const actualResource: Secret = byKind.Secret(actual).find(mysqlSecret) as any;
+
+            // @ts-ignore
+            expect(actualResource?.data["mysql-root-password"]).toBeUndefined();
             expect(actualResource).toMatchObject(expectedResource);
         });
 

@@ -5,15 +5,6 @@ import {byKind, getYaml, readAndClean, tpl} from "./utils";
 
 describe('deployment', () => {
     let defaultValues: MySqlOptions;
-    beforeAll(() => {
-        defaultValues = getYaml('../src/values.yaml');
-
-        defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
-        defaultValues.extraVolumeMounts = tpl(defaultValues.extraVolumeMounts);
-        defaultValues.extraInitContainers = tpl(defaultValues.extraInitContainers);
-
-        console.log(defaultValues);
-    });
 
     function getChart(options: MySqlOptions = defaultValues) {
         const app = new App();
@@ -24,6 +15,12 @@ describe('deployment', () => {
     }
 
     it('deployment default values', () => {
+        const defaultValues = getYaml('../src/values.yaml');
+
+        defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
+        defaultValues.extraVolumeMounts = tpl(defaultValues.extraVolumeMounts);
+        defaultValues.extraInitContainers = tpl(defaultValues.extraInitContainers);
+
         const chart = getChart({
             ...defaultValues,
         });
@@ -34,12 +31,8 @@ describe('deployment', () => {
         expect(actualDeployment).toEqual(deployment);
     });
 
-    it('sets up liveness probe commands if empty passwords are allowed', () => {
-
-    });
-
-    it('additional args are passed to the MySQL container', () => {
-        const overrideAll = getYaml('../src/override-all.yaml');
+    it('checks variant-1', () => {
+        const overrideAll = getYaml('../src/variant-1.yaml');
 
         // overrideAll has some tpl using text, like:
         // extraVolumeMounts: |
@@ -54,44 +47,42 @@ describe('deployment', () => {
         const chart = getChart({
             ...overrideAll
         });
-        const deployment = byKind.Deployment(readAndClean('override-all.snapshot.yaml'))[0];
+        const deployment = byKind.Deployment(readAndClean('variant-1.snapshot.yaml'))[0];
         let actual = Testing.synth(chart);
         const actualDeployment = byKind.Deployment(actual)[0];
         expect(actualDeployment).toEqual(deployment);
     });
 
-    it('tests persistence subpath',()=>{});
-    it('env variables with allow empty', ()=>{
-        /*
-        env:
-        {{- if .Values.mysqlAllowEmptyPassword }}
-        - name: MYSQL_ALLOW_EMPTY_PASSWORD
-          value: "true"
-        {{- end }}
-        {{- if not (and .Values.allowEmptyRootPassword (not .Values.mysqlRootPassword)) }}
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ template "mysql.secretName" . }}
-              key: mysql-root-password
-              {{- if .Values.mysqlAllowEmptyPassword }}
-              optional: true
-              {{- end }}
-        {{- end }}
-        {{- if not (and .Values.allowEmptyRootPassword (not .Values.mysqlPassword)) }}
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ template "mysql.secretName" . }}
-              key: mysql-password
-              {{- if or .Values.mysqlAllowEmptyPassword (empty .Values.mysqlUser) }}
-              optional: true
-              {{- end }}
-        {{- end }}
-        - name: MYSQL_USER
-          value: {{ default "" .Values.mysqlUser | quote }}
-        - name: MYSQL_DATABASE
-          value: {{ default "" .Values.mysqlDatabase | quote }}
-        * */
+    it('variant-2', () => {
+        const values = getYaml('../src/variant-2.yaml');
+
+        values.extraVolumes = tpl(values.extraVolumes);
+        values.extraVolumeMounts = tpl(values.extraVolumeMounts);
+        values.extraInitContainers = tpl(values.extraInitContainers);
+
+        const chart = getChart({
+            ...values
+        });
+        const deployment = byKind.Deployment(readAndClean('variant-2.snapshot.yaml'))[0];
+        let actual = Testing.synth(chart);
+        const actualDeployment = byKind.Deployment(actual)[0];
+        expect(actualDeployment).toEqual(deployment);
+
+    });
+    it('variant-3', () => {
+        const values = getYaml('../src/variant-3.yaml');
+
+        values.extraVolumes = tpl(values.extraVolumes);
+        values.extraVolumeMounts = tpl(values.extraVolumeMounts);
+        values.extraInitContainers = tpl(values.extraInitContainers);
+
+        const chart = getChart({
+            ...values
+        });
+        const deployment = byKind.Deployment(readAndClean('variant-3.snapshot.yaml'))[0];
+        let actual = Testing.synth(chart);
+        const actualDeployment = byKind.Deployment(actual)[0];
+        expect(actualDeployment).toEqual(deployment);
+
     });
 })
