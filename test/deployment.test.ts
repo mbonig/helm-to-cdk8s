@@ -14,7 +14,7 @@ describe('deployment', () => {
         return chart;
     }
 
-    it('deployment default values', () => {
+    it('default values', () => {
         const defaultValues = getYaml('../src/values.yaml');
 
         defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
@@ -31,7 +31,7 @@ describe('deployment', () => {
         expect(actualDeployment).toEqual(deployment);
     });
 
-    it('checks variant-1', () => {
+    it('variant-1', () => {
         const overrideAll = getYaml('../src/variant-1.yaml');
 
         // overrideAll has some tpl using text, like:
@@ -69,6 +69,7 @@ describe('deployment', () => {
         expect(actualDeployment).toEqual(deployment);
 
     });
+
     it('variant-3', () => {
         const values = getYaml('../src/variant-3.yaml');
 
