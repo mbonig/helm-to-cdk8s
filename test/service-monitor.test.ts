@@ -15,7 +15,7 @@ describe('service monitor', () => {
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
-            defaultValues = getYaml('../src/values.yaml');
+            defaultValues = getYaml('src/values.yaml');
         });
 
         it('doesn\'t exist', () => {
@@ -29,7 +29,7 @@ describe('service monitor', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-1.yaml');
+            hasSecretsValues = getYaml('src/variant-1.yaml');
         });
 
         it('exists', () => {
@@ -37,7 +37,7 @@ describe('service monitor', () => {
                 ...hasSecretsValues
             });
 
-            const [expected] = byResourceType(readAndClean('variant-1.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-1.snapshot.yaml'));
             expected.metadata.namespace = "lbs";
 
             const [actualResource] = byResourceType(Testing.synth(chart));

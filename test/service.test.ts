@@ -15,12 +15,12 @@ describe('service', () => {
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
-            defaultValues = getYaml('../src/values.yaml');
+            defaultValues = getYaml('src/values.yaml');
         });
 
         it('matches', () => {
             const chart = getChart({...defaultValues});
-            const [expected] = byResourceType(readAndClean('default.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/default.snapshot.yaml'));
             // there is a quirk in the helm chart
             // which will render an annotation field even if there are no values
             // and that causes an odd comparisson in the test
@@ -35,7 +35,7 @@ describe('service', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-1.yaml');
+            hasSecretsValues = getYaml('src/variant-1.yaml');
         });
 
         it('exists', () => {
@@ -43,7 +43,7 @@ describe('service', () => {
                 ...hasSecretsValues
             });
 
-            const [expected] = byResourceType(readAndClean('variant-1.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-1.snapshot.yaml'));
 
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toEqual(expected);
@@ -54,7 +54,7 @@ describe('service', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-2.yaml');
+            hasSecretsValues = getYaml('src/variant-2.yaml');
         });
 
         it('exists', () => {
@@ -62,7 +62,7 @@ describe('service', () => {
                 ...hasSecretsValues
             });
 
-            const [expected] = byResourceType(readAndClean('variant-2.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-2.snapshot.yaml'));
 
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toEqual(expected);

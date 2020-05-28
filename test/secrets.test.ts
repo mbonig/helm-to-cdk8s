@@ -16,14 +16,14 @@ describe('secrets', () => {
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
-            defaultValues = getYaml('../src/values.yaml');
+            defaultValues = getYaml('src/values.yaml');
 
         });
 
         it('default - creates mysql root secret', () => {
             const chart = getChart({...defaultValues});
 
-            let expectedSecret: any = byKind.Secret(readAndClean('default.snapshot.yaml'))
+            let expectedSecret: any = byKind.Secret(readAndClean('test/default.snapshot.yaml'))
                 .find(mysqlSecret);
 
             // since these are randomly generated, we don't want to check for them.
@@ -46,7 +46,7 @@ describe('secrets', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-1.yaml');
+            hasSecretsValues = getYaml('src/variant-1.yaml');
         });
 
 
@@ -55,7 +55,7 @@ describe('secrets', () => {
                 ...hasSecretsValues
             });
 
-            const expected = byKind.Secret(readAndClean('variant-1.snapshot.yaml'));
+            const expected = byKind.Secret(readAndClean('test/variant-1.snapshot.yaml'));
             let mysqlSslCertSecret = (x: any) => x.metadata.name === "mysql-ssl-certs";
             const expectedResource = expected.find(mysqlSslCertSecret);
 
@@ -71,7 +71,7 @@ describe('secrets', () => {
             });
 
             // get the resource from the snapshot we want
-            let expectedResource: any = byKind.Secret(readAndClean('variant-1.snapshot.yaml'))
+            let expectedResource: any = byKind.Secret(readAndClean('test/variant-1.snapshot.yaml'))
                 .find(mysqlSecret);
 
             // synth the chart
@@ -90,7 +90,7 @@ describe('secrets', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-2.yaml');
+            hasSecretsValues = getYaml('src/variant-2.yaml');
 
         });
 
@@ -117,7 +117,7 @@ describe('secrets', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-3.yaml');
+            hasSecretsValues = getYaml('src/variant-3.yaml');
 
         });
 
@@ -129,7 +129,7 @@ describe('secrets', () => {
             });
 
             // get the resource from the snapshot we want
-            let expectedResource: any = byKind.Secret(readAndClean('variant-3.snapshot.yaml'))
+            let expectedResource: any = byKind.Secret(readAndClean('test/variant-3.snapshot.yaml'))
                 .find(mysqlSecret);
 
 

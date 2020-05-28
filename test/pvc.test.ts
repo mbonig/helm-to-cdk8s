@@ -17,7 +17,7 @@ describe('pvc', () => {
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
-            defaultValues = getYaml('../src/values.yaml');
+            defaultValues = getYaml('src/values.yaml');
 
 
         });
@@ -25,7 +25,7 @@ describe('pvc', () => {
         it('default', () => {
             const chart = getChart({...defaultValues});
 
-            const [expectedSecret] = byResourceType(readAndClean('default.snapshot.yaml'));
+            const [expectedSecret] = byResourceType(readAndClean('test/default.snapshot.yaml'));
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toMatchObject(expectedSecret);
 
@@ -36,7 +36,7 @@ describe('pvc', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-1.yaml');
+            hasSecretsValues = getYaml('src/variant-1.yaml');
         });
 
 
@@ -45,7 +45,7 @@ describe('pvc', () => {
                 ...hasSecretsValues
             });
 
-            const [expected] = byResourceType(readAndClean('variant-1.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-1.snapshot.yaml'));
 
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toEqual(expected);
@@ -56,7 +56,7 @@ describe('pvc', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-2.yaml');
+            hasSecretsValues = getYaml('src/variant-2.yaml');
 
         });
 

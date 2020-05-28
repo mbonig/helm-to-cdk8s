@@ -17,7 +17,7 @@ describe('service account', () => {
     describe('using default values', () => {
         let defaultValues: MySqlOptions;
         beforeAll(() => {
-            defaultValues = getYaml('../src/values.yaml');
+            defaultValues = getYaml('src/values.yaml');
 
 
         });
@@ -35,7 +35,7 @@ describe('service account', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-1.yaml');
+            hasSecretsValues = getYaml('src/variant-1.yaml');
         });
 
 
@@ -44,7 +44,7 @@ describe('service account', () => {
                 ...hasSecretsValues
             });
 
-            const [expected] = byResourceType(readAndClean('variant-1.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-1.snapshot.yaml'));
 
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toEqual(expected);
@@ -55,7 +55,7 @@ describe('service account', () => {
         let hasSecretsValues: MySqlOptions;
 
         beforeAll(() => {
-            hasSecretsValues = getYaml('../src/variant-2.yaml');
+            hasSecretsValues = getYaml('src/variant-2.yaml');
 
         });
 
@@ -65,7 +65,7 @@ describe('service account', () => {
             const chart = getChart({
                 ...hasSecretsValues
             });
-            const [expected] = byResourceType(readAndClean('variant-2.snapshot.yaml'));
+            const [expected] = byResourceType(readAndClean('test/variant-2.snapshot.yaml'));
 
             // synth the chart
             let actual = Testing.synth(chart);

@@ -1,12 +1,11 @@
-import * as fs from "fs";
-import * as jsyaml from "js-yaml";
+import {Yaml} from "cdk8s";
+import * as jsyaml from 'js-yaml';
 
 export function getYaml(path: string): any | any[] {
-    const fileContents = fs.readFileSync(__dirname + '/' + path);
-    let filtered = fileContents.toString()
-        .split("\n---")
-        .filter(x => !!x)
-        .map(x => jsyaml.load(x))
+
+    const results = Yaml.load(path);
+
+    let filtered = results
         .filter(x => !!x)
         .map(x => {
 

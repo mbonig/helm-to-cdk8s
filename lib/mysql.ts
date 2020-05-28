@@ -1,5 +1,6 @@
 import {Construct, ConstructOptions, Node} from "constructs";
 import {
+    ConfigMap,
     Deployment,
     LocalObjectReference,
     PersistentVolumeClaim,
@@ -200,7 +201,7 @@ export class MySql extends Construct {
         this.createServiceAccount();
         this.createServiceMonitor();
         this.createService();
-
+        this.createConfigMaps();
     }
 
     private createDeployment() {
@@ -312,7 +313,8 @@ export class MySql extends Construct {
         volumes.push({
             "name": "data",
             "persistentVolumeClaim":
-                {"claimName": this.options.persistence.enabled && this.options.persistence.existingClaim || `${this.releaseName}-mysql`}});
+                {"claimName": this.options.persistence.enabled && this.options.persistence.existingClaim || `${this.releaseName}-mysql`}
+        });
 
         if (this.options.extraVolumes) {
             this.options.extraVolumes.forEach(x => volumes.push(x));
@@ -602,5 +604,25 @@ export class MySql extends Construct {
                 }
             }
         });
+    }
+
+    private createConfigMaps() {
+        if (undefinedIfEmpty(this.options.configurationFiles)) {
+            new ConfigMap(this, 'config-map-configuration-files', {
+                metadata: {
+                    name: `${this.fullname}-configuration`
+                },
+                data: this.options.configurationFiles
+            });
+        }
+
+        if (undefinedIfEmpty(this.options.initializationFiles)){
+            new ConfigMap(this, 'config-map-initialization-files', {
+                metadata: {
+                    name: `${this.fullname}-initialization`
+                },
+                data: this.options.initializationFiles
+            });
+        }
     }
 }
