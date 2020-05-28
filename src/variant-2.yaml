@@ -206,10 +206,10 @@ service:
     annotation1: value1
   ## Specify a service type
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
-  type: ClusterIP
+  type: LoadBalancer
   port: 3306
-  # nodePort: 32000
-  # loadBalancerIP:
+  nodePort: 32000
+  loadBalancerIP: 1.2.3.4
 
 ## Pods Service Account
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/

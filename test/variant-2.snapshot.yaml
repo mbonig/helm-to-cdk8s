@@ -78,11 +78,13 @@ metadata:
     test1: test2
     
 spec:
-  type: ClusterIP
+  type: LoadBalancer
+  loadBalancerIP: 1.2.3.4
   ports:
   - name: mysql
     port: 3306
     targetPort: mysql
+    nodePort: 32000
   - name: metrics
     port: 9104
     targetPort: metrics

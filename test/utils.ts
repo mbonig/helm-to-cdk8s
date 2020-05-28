@@ -33,7 +33,7 @@ export function base64(s: string) {
 
 
 export function byKind(kind: string) {
-    return (resources: { kind: string }[]) => resources.filter((x: any) => x.kind === kind);
+    return (resources: { kind: string, [key:string]: any }[]) => resources.filter((x: any) => x.kind === kind);
 }
 
 byKind.Secret = byKind('Secret');

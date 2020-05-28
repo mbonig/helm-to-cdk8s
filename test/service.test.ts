@@ -2,12 +2,12 @@ import {App, Chart, Testing} from "cdk8s";
 import {MySql, MySqlOptions} from "../lib/mysql";
 import {byKind, getYaml, readAndClean} from "./utils";
 
-describe('service monitor', () => {
-    let byResourceType = byKind('ServiceMonitor');
+describe('service', () => {
+    let byResourceType = byKind('Service');
 
     function getChart(options: MySqlOptions) {
         const app = new App();
-        const chart = new Chart(app, 'release-name', {namespace: 'lbs'});
+        const chart = new Chart(app, 'release-name');
         new MySql(chart, 'release-name', options);
         return chart;
     }
@@ -18,10 +18,16 @@ describe('service monitor', () => {
             defaultValues = getYaml('../src/values.yaml');
         });
 
-        it('doesn\'t exist', () => {
+        it('matches', () => {
             const chart = getChart({...defaultValues});
+            const [expected] = byResourceType(readAndClean('default.snapshot.yaml'));
+            // there is a quirk in the helm chart
+            // which will render an annotation field even if there are no values
+            // and that causes an odd comparisson in the test
+            // so instead, let's just delete it
+            delete expected.metadata.annotations;
             const [actualResource] = byResourceType(Testing.synth(chart));
-            expect(actualResource).toBeFalsy();
+            expect(actualResource).toMatchObject(expected);
         });
     });
 
@@ -38,7 +44,25 @@ describe('service monitor', () => {
             });
 
             const [expected] = byResourceType(readAndClean('variant-1.snapshot.yaml'));
-            expected.metadata.namespace = "lbs";
+
+            const [actualResource] = byResourceType(Testing.synth(chart));
+            expect(actualResource).toEqual(expected);
+        });
+    });
+
+    describe('using variant-2.yaml', () => {
+        let hasSecretsValues: MySqlOptions;
+
+        beforeAll(() => {
+            hasSecretsValues = getYaml('../src/variant-2.yaml');
+        });
+
+        it('exists', () => {
+            const chart = getChart({
+                ...hasSecretsValues
+            });
+
+            const [expected] = byResourceType(readAndClean('variant-2.snapshot.yaml'));
 
             const [actualResource] = byResourceType(Testing.synth(chart));
             expect(actualResource).toEqual(expected);

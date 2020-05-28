@@ -7,6 +7,7 @@ import {
     Probe,
     ResourceRequirements,
     Secret,
+    Service as S,
     ServiceAccount as SA,
     Volume,
     VolumeMount
@@ -14,6 +15,7 @@ import {
 import {base64} from "../test/utils";
 import {getKeys, randAlphaNum, undefinedIfEmpty} from "./utils";
 import {Chart} from "cdk8s";
+import {ServiceMonitor as SM} from "../imports/monitoring.coreos.com/servicemonitor";
 
 export interface ExtraVolume {
     name: string;
@@ -70,6 +72,8 @@ export interface Service {
     annotations: any;
     type: string;
     port: number;
+    nodePort?: string;
+    loadBalancerIP?: string;
 }
 
 export interface ServiceAccount {
@@ -172,13 +176,17 @@ export class MySql extends Construct {
     private readonly secretName: string = "";
     private readonly labels: any;
     private readonly serviceAccountName: string;
+    private readonly namespace: string;
 
     constructor(scope: Construct, id: string, private options: MySqlOptions) {
         super(scope, id, options);
 
-        this.chart = Node.of(Chart.of(this));
-        this.releaseName = this.chart.id;
+        let chart = Chart.of(this);
+        this.chart = Node.of(chart);
+        this.namespace = chart.namespace || "";
+
         this.fullname = this.getFullname();
+        this.releaseName = this.chart.id;
         this.secretName = `${this.releaseName}-mysql`;
         this.labels = {
             app: `${this.releaseName}-mysql`,
@@ -191,6 +199,7 @@ export class MySql extends Construct {
         this.createPvc();
         this.createServiceAccount();
         this.createServiceMonitor();
+        this.createService();
 
     }
 
@@ -300,7 +309,10 @@ export class MySql extends Construct {
             volumes.push({name: 'certificates', secret: {secretName: this.options.ssl.secret}});
         }
 
-        volumes.push({"name": "data", "persistentVolumeClaim": {"claimName": `${this.releaseName}-mysql`}});
+        volumes.push({
+            "name": "data",
+            "persistentVolumeClaim":
+                {"claimName": this.options.persistence.enabled && this.options.persistence.existingClaim || `${this.releaseName}-mysql`}});
 
         if (this.options.extraVolumes) {
             this.options.extraVolumes.forEach(x => volumes.push(x));
@@ -415,7 +427,7 @@ export class MySql extends Construct {
                             runAsUser: this.options.securityContext.runAsUser
                         } : undefined,
                         tolerations: undefinedIfEmpty(this.options.tolerations),
-                        serviceAccountName: "default",
+                        serviceAccountName: this.options.serviceAccount.create ? this.options.serviceAccount.name || this.fullname : "default",
                         volumes: volumes,
                         affinity: undefinedIfEmpty(this.options.affinity)
                     }
@@ -530,8 +542,65 @@ export class MySql extends Construct {
     }
 
     private createServiceMonitor() {
-        if (this.options.metrics.enabled && this.options.metrics.serviceMonitor.enabled){
-            // new ServiceMonitor()
+        if (this.options.metrics.enabled && this.options.metrics.serviceMonitor.enabled) {
+            new SM(this, 'service-monitor', {
+                metadata: {
+                    name: this.fullname,
+                    labels: {
+                        ...this.labels,
+                        ...this.options.metrics.serviceMonitor.additionalLabels
+                    }
+                },
+                spec: {
+                    endpoints: [
+                        {port: 'metrics', interval: "30s"}
+                    ],
+                    namespaceSelector: {
+                        matchNames: [this.namespace]
+                    },
+                    selector: {
+                        matchLabels: this.labels
+                    }
+                }
+            });
         }
+    }
+
+    private createService() {
+        let service = this.options.service;
+        let ports: any[] = [
+            {
+                name: 'mysql',
+                port: service.port,
+                targetPort: 'mysql',
+                nodePort: service.nodePort
+            }
+        ];
+        if (this.options.metrics.enabled) {
+            ports.push({
+                name: 'metrics',
+                port: 9104,
+                targetPort: 'metrics'
+            });
+        }
+        let annotations = undefinedIfEmpty({
+            ...undefinedIfEmpty(service.annotations),
+            ...undefinedIfEmpty(this.options.metrics.enabled && this.options.metrics.annotations ? this.options.metrics.annotations : {})
+        });
+        new S(this, 'service', {
+            metadata: {
+                name: this.fullname,
+                labels: this.labels,
+                annotations: annotations
+            },
+            spec: {
+                type: service.type,
+                loadBalancerIP: service.type === "LoadBalancer" && !!service.loadBalancerIP ? service.loadBalancerIP : undefined,
+                ports: ports,
+                selector: {
+                    app: this.fullname
+                }
+            }
+        });
     }
 }
