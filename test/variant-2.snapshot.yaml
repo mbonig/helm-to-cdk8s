@@ -46,25 +46,17 @@ data:
     }
 
 ---
-# Source: mysql/templates/pvc.yaml
+# Source: mysql/templates/serviceaccount.yaml
 
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: release-name-mysql
-  namespace: lbs
+  name: serviceAccountName
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
     release: "release-name"
     heritage: "Tiller"
-spec:
-  accessModes:
-    - "ReadWriteOnce"
-  resources:
-    requests:
-      storage: "8Gi"
-  storageClassName: "gp2"
 
 ---
 # Source: mysql/templates/svc.yaml
@@ -194,7 +186,7 @@ spec:
       securityContext:
         fsGroup: 999
         runAsUser: 999
-      serviceAccountName: default
+      serviceAccountName: serviceAccountName
       initContainers:
       - name: "remove-lost-found"
         image: "busybox-something:busyboximagetag"
@@ -359,7 +351,7 @@ spec:
           secretName: mysql-ssl-certs
       - name: data
         persistentVolumeClaim:
-          claimName: release-name-mysql
+          claimName: someexistingclaim
       - name: extras
         emptyDir: {}
       
@@ -392,10 +384,10 @@ spec:
       release: release-name
 
 ---
-# Source: mysql/templates/secrets.yaml
+# Source: mysql/templates/pvc.yaml
 
 
 ---
-# Source: mysql/templates/serviceaccount.yaml
+# Source: mysql/templates/secrets.yaml
 
 

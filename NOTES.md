@@ -1,24 +1,8 @@
-
-
-
-
 * run the default values file and produce a resulting templates, saved as 'default.snapshot.yaml' in the tests, also save off the values.yaml into the local directory
 
-* write tests to do a full "equals" match
-    * problem with this is that there are some helm-specific parts of the template that probably shouldn't come over
-    * need to determine a way to do partial tests
-* need to analyze existing helm chart:
-    * determine values files to use
-        * the default
-        * an 'all-in'?
-        * as many as needed to cover functionality
-        * many different ifs could be represented
-
 divide test files by resource type
-* multiple tests for each `values` file defined previously
 
-existing helm convention: release-name, that's the chart's name
-
+* multiple tests for each `values` file defined previously, the variants
 
 ---
 Review the existing chart's README and templates
@@ -27,7 +11,6 @@ Divide by resource type
 Determine test for each resource type
 determine number of snapshots you'll need
 generate the snapshots
-fill in the tests.
 
 get all Values used:
 ```
@@ -57,5 +40,17 @@ Kinds of code worth reviewing:
   - name: MYSQL_ROOT_PASSWORD
   // more complicated if logic        
   ```
+
+look for any templates, create helper methods for those and tests around them specifically.
+ 
   
+Get variants:
+
+Start with deployment.yaml (or whatever)
+get all usages of .Values. (use script)
+go line by line through template. For each reference (straight reference or if statement), check if it's provided in the default file.
+If it's in the default file, mark that on your sheet
+If it's not, then mark it as variant-1
+If it's an if statement... ?? 
+
   

@@ -125,6 +125,7 @@ persistence:
   ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
   ##   GKE, AWS & OpenStack)
   ##
+  existingClaim: someexistingclaim
   storageClass: "gp2"
   subPath: /whatever
   accessMode: ReadWriteOnce
@@ -215,10 +216,10 @@ service:
 serviceAccount:
   ## Specifies whether a ServiceAccount should be created
   ##
-  create: false
+  create: true
   ## The name of the ServiceAccount to use.
   ## If not set and create is true, a name is generated using the mariadb.fullname template
-  # name:
+  name: serviceAccountName
 
 ssl:
   enabled: true

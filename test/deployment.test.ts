@@ -1,6 +1,6 @@
 import {App, Chart, Testing} from "cdk8s";
 import {MySql, MySqlOptions} from "../lib/mysql";
-import {byKind, getYaml, readAndClean, tpl} from "./utils";
+import {byKind, getYaml, readAndClean} from "./utils";
 
 
 describe('deployment', () => {
@@ -17,9 +17,6 @@ describe('deployment', () => {
     it('default values', () => {
         const defaultValues = getYaml('../src/values.yaml');
 
-        defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
-        defaultValues.extraVolumeMounts = tpl(defaultValues.extraVolumeMounts);
-        defaultValues.extraInitContainers = tpl(defaultValues.extraInitContainers);
 
         const chart = getChart({
             ...defaultValues,
@@ -34,15 +31,6 @@ describe('deployment', () => {
     it('variant-1', () => {
         const overrideAll = getYaml('../src/variant-1.yaml');
 
-        // overrideAll has some tpl using text, like:
-        // extraVolumeMounts: |
-        //   - name: extras
-        //     mountPath: /usr/share/extras
-        //     readOnly: true
-        // which needs special handling:
-        overrideAll.extraVolumes = tpl(overrideAll.extraVolumes);
-        overrideAll.extraVolumeMounts = tpl(overrideAll.extraVolumeMounts);
-        overrideAll.extraInitContainers = tpl(overrideAll.extraInitContainers);
 
         const chart = getChart({
             ...overrideAll
@@ -55,11 +43,6 @@ describe('deployment', () => {
 
     it('variant-2', () => {
         const values = getYaml('../src/variant-2.yaml');
-
-        values.extraVolumes = tpl(values.extraVolumes);
-        values.extraVolumeMounts = tpl(values.extraVolumeMounts);
-        values.extraInitContainers = tpl(values.extraInitContainers);
-
         const chart = getChart({
             ...values
         });
@@ -72,10 +55,6 @@ describe('deployment', () => {
 
     it('variant-3', () => {
         const values = getYaml('../src/variant-3.yaml');
-
-        values.extraVolumes = tpl(values.extraVolumes);
-        values.extraVolumeMounts = tpl(values.extraVolumeMounts);
-        values.extraInitContainers = tpl(values.extraInitContainers);
 
         const chart = getChart({
             ...values

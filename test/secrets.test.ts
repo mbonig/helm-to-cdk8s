@@ -1,6 +1,6 @@
 import {App, Chart, Testing} from "cdk8s";
 import {MySql, MySqlOptions} from "../lib/mysql";
-import {byKind, getYaml, readAndClean, tpl} from "./utils";
+import {byKind, getYaml, readAndClean} from "./utils";
 import {Secret} from "../imports/k8s";
 
 describe('secrets', () => {
@@ -18,9 +18,6 @@ describe('secrets', () => {
         beforeAll(() => {
             defaultValues = getYaml('../src/values.yaml');
 
-            defaultValues.extraVolumes = tpl(defaultValues.extraVolumes);
-            defaultValues.extraVolumeMounts = tpl(defaultValues.extraVolumeMounts);
-            defaultValues.extraInitContainers = tpl(defaultValues.extraInitContainers);
         });
 
         it('default - creates mysql root secret', () => {
@@ -50,10 +47,6 @@ describe('secrets', () => {
 
         beforeAll(() => {
             hasSecretsValues = getYaml('../src/variant-1.yaml');
-
-            hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
-            hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
-            hasSecretsValues.extraInitContainers = tpl(hasSecretsValues.extraInitContainers);
         });
 
 
@@ -99,9 +92,6 @@ describe('secrets', () => {
         beforeAll(() => {
             hasSecretsValues = getYaml('../src/variant-2.yaml');
 
-            hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
-            hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
-            hasSecretsValues.extraInitContainers = tpl(hasSecretsValues.extraInitContainers);
         });
 
 
@@ -129,9 +119,6 @@ describe('secrets', () => {
         beforeAll(() => {
             hasSecretsValues = getYaml('../src/variant-3.yaml');
 
-            hasSecretsValues.extraVolumes = tpl(hasSecretsValues.extraVolumes);
-            hasSecretsValues.extraVolumeMounts = tpl(hasSecretsValues.extraVolumeMounts);
-            hasSecretsValues.extraInitContainers = tpl(hasSecretsValues.extraInitContainers);
         });
 
 

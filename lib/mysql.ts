@@ -2,10 +2,12 @@ import {Construct, ConstructOptions, Node} from "constructs";
 import {
     Deployment,
     LocalObjectReference,
+    PersistentVolumeClaim,
     PodSecurityContext,
     Probe,
     ResourceRequirements,
     Secret,
+    ServiceAccount as SA,
     Volume,
     VolumeMount
 } from "../imports/k8s";
@@ -32,6 +34,8 @@ export interface ExtraInitContainer {
 }
 
 export interface Persistence {
+    storageClass: string;
+    existingClaim: string;
     enabled: boolean;
     accessMode: string;
     size: string;
@@ -69,7 +73,8 @@ export interface Service {
 }
 
 export interface ServiceAccount {
-    create: false;
+    name: string;
+    create: boolean;
 }
 
 export interface Certificate {
@@ -165,6 +170,8 @@ export class MySql extends Construct {
     private readonly fullname: string;
     private readonly chart: Node;
     private readonly secretName: string = "";
+    private readonly labels: any;
+    private readonly serviceAccountName: string;
 
     constructor(scope: Construct, id: string, private options: MySqlOptions) {
         super(scope, id, options);
@@ -173,9 +180,18 @@ export class MySql extends Construct {
         this.releaseName = this.chart.id;
         this.fullname = this.getFullname();
         this.secretName = `${this.releaseName}-mysql`;
+        this.labels = {
+            app: `${this.releaseName}-mysql`,
+            release: this.releaseName
+        };
+        this.serviceAccountName = this.getServiceAccountName();
 
         this.createSecrets();
         this.createDeployment();
+        this.createPvc();
+        this.createServiceAccount();
+        this.createServiceMonitor();
+
     }
 
     private createDeployment() {
@@ -370,23 +386,19 @@ export class MySql extends Construct {
             });
         }
 
-        let labels = {
-            "app": `${this.releaseName}-mysql`,
-            "release": this.releaseName
-        };
         new Deployment(this, 'deployment', {
             metadata: {
-                labels: labels,
+                labels: this.labels,
                 annotations: undefinedIfEmpty(this.options.deploymentAnnotations),
                 name: `${this.releaseName}-mysql`,
             },
             spec: {
-                selector: {"matchLabels": labels},
+                selector: {"matchLabels": this.labels},
                 strategy: {"type": "Recreate"},
                 template: {
                     metadata: {
                         labels: {
-                            ...labels,
+                            ...this.labels,
                             ...this.options.podLabels
                         },
                         annotations: undefinedIfEmpty(this.options.podAnnotations)
@@ -419,10 +431,7 @@ export class MySql extends Construct {
                     type: 'Opaque',
                     metadata: {
                         name: cert.name,
-                        labels: {
-                            app: this.secretName,
-                            release: `${this.releaseName}`,
-                        }
+                        labels: this.labels
                     },
                     data: {
                         "ca.pem": base64(cert.ca),
@@ -448,10 +457,7 @@ export class MySql extends Construct {
                 type: 'Opaque',
                 metadata: {
                     name: this.secretName,
-                    labels: {
-                        app: this.secretName,
-                        release: this.releaseName,
-                    }
+                    labels: this.labels
                 },
                 data: data
             });
@@ -464,5 +470,68 @@ export class MySql extends Construct {
         }
         const defaultName = Node.of(Chart.of(this)).id || this.options.nameOverride;
         return `${defaultName}-mysql`;
+    }
+
+    private createPvc() {
+        if (this.options.persistence.enabled && !this.options.persistence.existingClaim) {
+            let storageClassName;
+            if (this.options.persistence.storageClass) {
+                if (this.options.persistence.storageClass === '-') {
+                    storageClassName = "";
+                } else {
+                    storageClassName = this.options.persistence.storageClass
+                }
+            }
+
+            new PersistentVolumeClaim(this, 'pvc', {
+                metadata: {
+                    name: this.fullname,
+                    annotations: undefinedIfEmpty(this.options.persistence.annotations),
+                    labels: this.labels
+                },
+                spec: {
+                    accessModes: [this.options.persistence.accessMode],
+                    resources: {
+                        requests: {
+                            storage: this.options.persistence.size
+                        }
+                    },
+                    storageClassName: storageClassName
+                }
+            });
+        }
+    }
+
+    private createServiceAccount() {
+        if (this.options.serviceAccount.create) {
+            new SA(this, 'service-account', {
+                metadata: {
+                    name: this.serviceAccountName,
+                    labels: this.labels
+                }
+            });
+        }
+    }
+
+    private getServiceAccountName() {
+        /*
+        {{- define "mysql.serviceAccountName" -}}
+        {{- if .Values.serviceAccount.create -}}
+        {{ default (include "mysql.fullname" .) .Values.serviceAccount.name }}
+        {{- else -}}
+        {{ default "default" .Values.serviceAccount.name }}
+        {{- end -}}
+        {{- end -}}
+        */
+        if (this.options.serviceAccount.create) {
+            return this.options.serviceAccount.name || this.fullname;
+        }
+        return "";
+    }
+
+    private createServiceMonitor() {
+        if (this.options.metrics.enabled && this.options.metrics.serviceMonitor.enabled){
+            // new ServiceMonitor()
+        }
     }
 }

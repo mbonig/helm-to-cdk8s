@@ -7,7 +7,22 @@ export function getYaml(path: string): any | any[] {
         .split("\n---")
         .filter(x => !!x)
         .map(x => jsyaml.load(x))
-        .filter(x => !!x);
+        .filter(x => !!x)
+        .map(x => {
+
+            // overrideAll has some tpl using text, like:
+            // extraVolumeMounts: |
+            //   - name: extras
+            //     mountPath: /usr/share/extras
+            //     readOnly: true
+            // which needs special handling:
+
+
+            if (x.extraVolumes) x.extraVolumes = tpl(x.extraVolumes);
+            if (x.extraVolumeMounts) x.extraVolumeMounts = tpl(x.extraVolumeMounts);
+            if (x.extraInitContainers) x.extraInitContainers = tpl(x.extraInitContainers);
+            return x;
+        })
 
     return filtered.length === 1 ? filtered[0] : filtered;
 }
