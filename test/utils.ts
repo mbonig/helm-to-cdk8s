@@ -1,4 +1,4 @@
-import {App, Chart, Testing, Yaml} from "cdk8s";
+import {App, Chart, ChartOptions, Testing, Yaml} from "cdk8s";
 import * as jsyaml from 'js-yaml';
 import {MySql, MySqlOptions} from "../lib/mysql";
 
@@ -21,9 +21,9 @@ export function getYaml(path: string): any | any[] {
     return filtered.length === 1 ? filtered[0] : filtered;
 }
 
-export function getChart(options: MySqlOptions) {
+export function getChart(options: MySqlOptions, chartOptions?: ChartOptions) {
     const app = new App();
-    const chart = new Chart(app, 'release-name');
+    const chart = new Chart(app, 'release-name', chartOptions);
     new MySql(chart, 'release-name', options);
     return chart;
 }

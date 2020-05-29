@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: release-name-mysql
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -44,7 +44,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: release-name-mysql-configuration
-  namespace: lbs
+  namespace: test
 data:
   mysql.cnf: |-
     [mysqld]
@@ -59,7 +59,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: release-name-mysql-initialization
-  namespace: lbs
+  namespace: test
 data:
   first-db.sql: |-
     CREATE DATABASE IF NOT EXISTS first DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: release-name-mysql-test
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -88,7 +88,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: release-name-mysql
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -100,7 +100,7 @@ spec:
   resources:
     requests:
       storage: "8Gi"
-  storageClassName: "gp2"
+  storageClassName: ""
 
 ---
 # Source: mysql/templates/svc.yaml
@@ -108,7 +108,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: release-name-mysql
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -140,7 +140,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: release-name-mysql-test
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -191,7 +191,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: release-name-mysql
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -290,14 +290,11 @@ spec:
             memory: 256Mi
           
         env:
-        - name: MYSQL_ALLOW_EMPTY_PASSWORD
-          value: "true"
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: release-name-mysql
               key: mysql-password
-              optional: true
         - name: MYSQL_USER
           value: "notroot"
         - name: MYSQL_DATABASE
@@ -310,8 +307,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - mysqladmin
-            - ping
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -320,8 +318,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - mysqladmin
-            - ping
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
           initialDelaySeconds: 5
           periodSeconds: 10
           timeoutSeconds: 1
@@ -345,10 +344,16 @@ spec:
       - name: metrics
         image: "prom/mysqld-exporter:v0.10.0"
         imagePullPolicy: "IfNotPresent"
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: release-name-mysql
+              key: mysql-root-password
         command:
         - 'sh'
         - '-c'
-        - 'DATA_SOURCE_NAME="root@(localhost:3306)/" /bin/mysqld_exporter'
+        - 'DATA_SOURCE_NAME="root:$MYSQL_ROOT_PASSWORD@(localhost:3306)/" /bin/mysqld_exporter'
         - "# test"
         ports:
         - name: metrics
@@ -397,7 +402,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: release-name-mysql
-  namespace: lbs
+  namespace: test
   labels:
     app: release-name-mysql
     chart: "mysql-1.6.4"
@@ -411,7 +416,7 @@ spec:
       interval: 30s
   namespaceSelector:
     matchNames:
-      - lbs
+      - test
   selector:
     matchLabels:
       app: release-name-mysql

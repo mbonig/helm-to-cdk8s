@@ -1,143 +1,71 @@
-import {App, Chart, Testing} from "cdk8s";
-import {MySql, MySqlOptions} from "../lib/mysql";
-import {byKind, getYaml, readAndClean} from "./utils";
+import {Testing} from "cdk8s";
+import {MySqlOptions} from "../lib/mysql";
+import {byKind, checkVariant, getChart, getYaml, readAndClean} from "./utils";
 import {Secret} from "../imports/k8s";
 
 describe('secrets', () => {
-    let mysqlSecret = (x: any) => x.metadata.name !== "mysql-ssl-certs";
-
-    function getChart(options: MySqlOptions) {
-        const app = new App();
-        const chart = new Chart(app, 'release-name');
-        new MySql(chart, 'release-name', options);
-        return chart;
-    }
+    const byResourceType = byKind.Secret;
+    const mysqlSecretPredicate = (x: any) => x.metadata.name !== "mysql-ssl-certs";
+    const certPredicate = (x: any) => x.metadata.name === "mysql-ssl-certs";
 
     describe('using default values', () => {
-        let defaultValues: MySqlOptions;
-        beforeAll(() => {
-            defaultValues = getYaml('src/values.yaml');
-
-        });
+        const defaultValues = getYaml('src/values.yaml');
 
         it('default - creates mysql root secret', () => {
             const chart = getChart({...defaultValues});
 
-            let expectedSecret: any = byKind.Secret(readAndClean('test/default.snapshot.yaml'))
-                .find(mysqlSecret);
+            let expectedSecret: any = byResourceType(readAndClean('test/default.snapshot.yaml'))
+                .find(mysqlSecretPredicate);
 
             // since these are randomly generated, we don't want to check for them.
             delete expectedSecret.data["mysql-password"];
             delete expectedSecret.data["mysql-root-password"];
 
             let actual = Testing.synth(chart);
-            const actualResource = byKind.Secret(actual).find(mysqlSecret);
+            const actualResource = byKind.Secret(actual).find(mysqlSecretPredicate);
             expect(actualResource).toMatchObject(expectedSecret);
-
-            // this could be done better. Since I delete the fields off the expected
-            // object then the test here is 'don't even check if the fields exist'
-            // which isn't great and I think could be replaced with a routine
-            // that would decode the value and check to see it's sufficiently
-            // random
         });
     });
 
     describe('using variant-1.yaml', () => {
-        let hasSecretsValues: MySqlOptions;
-
-        beforeAll(() => {
-            hasSecretsValues = getYaml('src/variant-1.yaml');
-        });
-
+        let options: MySqlOptions = getYaml('src/variant-1.yaml')
 
         it('has secrets for certs', () => {
-            const chart = getChart({
-                ...hasSecretsValues
-            });
-
-            const expected = byKind.Secret(readAndClean('test/variant-1.snapshot.yaml'));
-            let mysqlSslCertSecret = (x: any) => x.metadata.name === "mysql-ssl-certs";
-            const expectedResource = expected.find(mysqlSslCertSecret);
-
-            let actual = Testing.synth(chart);
-            const actualResource = actual.find(x => x.kind === "Secret");
-            expect(actualResource).toEqual(expectedResource);
+            checkVariant(options, byResourceType, 'test/variant-1.snapshot.yaml', certPredicate);
         });
 
         it('uses provided passwords in secret', () => {
-            // create the chart
-            const chart = getChart({
-                ...hasSecretsValues
-            });
-
-            // get the resource from the snapshot we want
-            let expectedResource: any = byKind.Secret(readAndClean('test/variant-1.snapshot.yaml'))
-                .find(mysqlSecret);
-
-            // synth the chart
-            let actual = Testing.synth(chart);
-
-            // get the actual resource created
-            const actualResource = byKind.Secret(actual).find(mysqlSecret);
-
-            // check for toMatchObject (not a complete deep-equals)
-            expect(actualResource).toMatchObject(expectedResource);
+            checkVariant(options, byResourceType, 'test/variant-1.snapshot.yaml', mysqlSecretPredicate);
         });
 
     })
 
     describe('using variant-2.yaml', () => {
-        let hasSecretsValues: MySqlOptions;
-
-        beforeAll(() => {
-            hasSecretsValues = getYaml('src/variant-2.yaml');
-
-        });
-
+        let options: MySqlOptions = getYaml('src/variant-2.yaml');
 
         it(`secret isn't created`, () => {
-            // create the chart
-            const chart = getChart({
-                ...hasSecretsValues
-            });
-
-            // synth the chart
-            let actual = Testing.synth(chart);
-
-            // get the actual resource created
-            const actualResource = byKind.Secret(actual).find(mysqlSecret);
-
-            // check it doesn't exist
-            expect(actualResource).toBeFalsy();
+            checkVariant(options, byResourceType, 'test/variant-2.snapshot.yaml', mysqlSecretPredicate)
         });
 
     });
 
     describe('using variant-3.yaml', () => {
-        let hasSecretsValues: MySqlOptions;
-
-        beforeAll(() => {
-            hasSecretsValues = getYaml('src/variant-3.yaml');
-
-        });
-
+        let options: MySqlOptions = getYaml('src/variant-3.yaml');
 
         it(`secret has blank passwords`, () => {
             // create the chart
-            const chart = getChart({
-                ...hasSecretsValues
-            });
+            const chart = getChart(options);
 
             // get the resource from the snapshot we want
             let expectedResource: any = byKind.Secret(readAndClean('test/variant-3.snapshot.yaml'))
-                .find(mysqlSecret);
+                .find(mysqlSecretPredicate);
 
 
             // synth the chart
             let actual = Testing.synth(chart);
 
             // get the actual resource created
-            const actualResource: Secret = byKind.Secret(actual).find(mysqlSecret) as any;
+            const actualResource: Secret = byKind.Secret(actual).find(mysqlSecretPredicate) as any;
 
             // @ts-ignore
             expect(actualResource?.data["mysql-root-password"]).toBeUndefined();

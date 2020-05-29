@@ -253,19 +253,22 @@ export class MySql extends Construct {
             }
         }
 
-        const env = [
-            this.options.allowEmptyRootPassword ? {
-                name: "MYSQL_ALLOW_EMPTY_PASSWORD",
-                value: "true"
-            } : {
-                "name": "MYSQL_ROOT_PASSWORD",
-                "valueFrom": {
-                    "secretKeyRef": {
-                        "key": "mysql-root-password",
-                        "name": this.options.existingSecret || `${this.releaseName}-mysql`
-                    }
+        const env = [];
+        this.options.mysqlAllowEmptyPassword && env.push({
+            name: "MYSQL_ALLOW_EMPTY_PASSWORD",
+            value: "true"
+        });
+        !(this.options.allowEmptyRootPassword && !this.options.mysqlRootPassword) && env.push({
+            "name": "MYSQL_ROOT_PASSWORD",
+            "valueFrom": {
+                "secretKeyRef": {
+                    "key": "mysql-root-password",
+                    "name": this.options.existingSecret || `${this.releaseName}-mysql`,
+                    optional: this.options.mysqlAllowEmptyPassword
                 }
-            },
+            }
+        });
+        env.push(...[
             {
                 "name": "MYSQL_PASSWORD",
                 "valueFrom": {
@@ -284,7 +287,7 @@ export class MySql extends Construct {
                 "name": "MYSQL_DATABASE",
                 "value": this.options.mysqlDatabase || ""
             }
-        ];
+        ]);
 
         if (this.options.timezone) {
             env.push({name: "TZ", value: this.options.timezone});
@@ -310,11 +313,15 @@ export class MySql extends Construct {
             volumes.push({name: 'certificates', secret: {secretName: this.options.ssl.secret}});
         }
 
-        volumes.push({
-            "name": "data",
-            "persistentVolumeClaim":
-                {"claimName": this.options.persistence.enabled && this.options.persistence.existingClaim || `${this.releaseName}-mysql`}
-        });
+        let dataVolume: any = {
+            "name": "data"
+        };
+        if (this.options.persistence.enabled) {
+            dataVolume.persistentVolumeClaim = {"claimName": this.options.persistence.enabled && this.options.persistence.existingClaim || `${this.releaseName}-mysql`};
+        } else {
+            dataVolume.emptyDir = {};
+        }
+        volumes.push(dataVolume);
 
         if (this.options.extraVolumes) {
             this.options.extraVolumes.forEach(x => volumes.push(x));
@@ -616,7 +623,7 @@ export class MySql extends Construct {
             });
         }
 
-        if (undefinedIfEmpty(this.options.initializationFiles)){
+        if (undefinedIfEmpty(this.options.initializationFiles)) {
             new ConfigMap(this, 'config-map-initialization-files', {
                 metadata: {
                     name: `${this.fullname}-initialization`

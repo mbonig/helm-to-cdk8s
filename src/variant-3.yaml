@@ -28,7 +28,7 @@ mysqlPassword: notthepassword
 
 ## Allow unauthenticated access, uncomment to enable
 ##
-mysqlAllowEmptyPassword: true
+mysqlAllowEmptyPassword: false
 allowEmptyRootPassword: true
 
 ## Create a database
@@ -125,7 +125,7 @@ persistence:
   ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
   ##   GKE, AWS & OpenStack)
   ##
-  storageClass: "gp2"
+  storageClass: "-"
   subPath: /whatever
   accessMode: ReadWriteOnce
   size: 8Gi

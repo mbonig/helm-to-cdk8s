@@ -13,8 +13,7 @@ testFramework:
   image: "dduportal/bats"
   tag: "0.4.0"
 
-# this should negate the secret being created
-existingSecret: someexistingsecret
+#existingSecret: someexistingsecret
 
 ## Specify password for root user
 ##
@@ -29,7 +28,8 @@ mysqlPassword: notthepassword
 
 ## Allow unauthenticated access, uncomment to enable
 ##
-mysqlAllowEmptyPassword: true
+mysqlAllowEmptyPassword: false
+allowEmptyRootPassword: true
 
 ## Create a database
 ##
@@ -117,7 +117,7 @@ readinessProbe:
 
 ## Persist data to a persistent volume
 persistence:
-  enabled: true
+  enabled: false
   ## database data Persistent Volume Storage Class
   ## If defined, storageClassName: <storageClass>
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
@@ -125,7 +125,6 @@ persistence:
   ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
   ##   GKE, AWS & OpenStack)
   ##
-  existingClaim: someexistingclaim
   storageClass: "gp2"
   subPath: /whatever
   accessMode: ReadWriteOnce
@@ -206,20 +205,20 @@ service:
     annotation1: value1
   ## Specify a service type
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
-  type: LoadBalancer
+  type: ClusterIP
   port: 3306
-  nodePort: 32000
-  loadBalancerIP: 1.2.3.4
+  # nodePort: 32000
+  # loadBalancerIP:
 
 ## Pods Service Account
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 serviceAccount:
   ## Specifies whether a ServiceAccount should be created
   ##
-  create: true
+  create: false
   ## The name of the ServiceAccount to use.
   ## If not set and create is true, a name is generated using the mariadb.fullname template
-  name: serviceAccountName
+  # name:
 
 ssl:
   enabled: true

@@ -24,4 +24,11 @@ describe('pvc', () => {
             checkVariant(options, byResourceType, 'test/variant-2.snapshot.yaml');
         });
     });
+
+    describe('using variant-3.yaml', () => {
+        let options: MySqlOptions = getYaml('src/variant-3.yaml');
+        it(`pvc created with storage class`, () => {
+            checkVariant(options, byResourceType, 'test/variant-3.snapshot.yaml');
+        });
+    });
 });
