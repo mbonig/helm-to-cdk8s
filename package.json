@@ -8,6 +8,7 @@
   "scripts": {
     "import": "cdk8s import",
     "synth": "cdk8s synth",
+    "clean": "",
     "compile": "tsc",
     "watch": "tsc -w",
     "test": "jest",

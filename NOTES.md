@@ -54,3 +54,9 @@ If it's not, then mark it as variant-1
 If it's an if statement... ?? 
 
   
+* get all .Values from deployment.yaml
+* mark anything that is an 'if' is blue - this means that it's just a basic null-check if, not complex logic
+* mark anything with complex logic in orange - this will require further analysis
+* look for any |'s , for default names of things
+* mark the default column if the passed value is tested by the default values file
+
