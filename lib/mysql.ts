@@ -190,7 +190,7 @@ export class MySql extends Construct {
         this.releaseName = this.chart.id;
         this.secretName = `${this.releaseName}-mysql`;
         this.labels = {
-            app: `${this.releaseName}-mysql`,
+            app: this.fullname,
             release: this.releaseName
         };
         this.serviceAccountName = this.getServiceAccountName();

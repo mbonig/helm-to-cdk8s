@@ -85,6 +85,27 @@ data:
     }
 
 ---
+# Source: mysql/templates/pvc.yaml
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: release-name-mysql
+  namespace: test
+  labels:
+    app: release-name-mysql
+    chart: "mysql-1.6.4"
+    release: "release-name"
+    heritage: "Tiller"
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "8Gi"
+  storageClassName: ""
+
+---
 # Source: mysql/templates/svc.yaml
 apiVersion: v1
 kind: Service
@@ -376,7 +397,8 @@ spec:
         secret:
           secretName: mysql-ssl-certs
       - name: data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: release-name-mysql
       - name: extras
         emptyDir: {}
       
@@ -407,10 +429,6 @@ spec:
     matchLabels:
       app: release-name-mysql
       release: release-name
-
----
-# Source: mysql/templates/pvc.yaml
-
 
 ---
 # Source: mysql/templates/serviceaccount.yaml

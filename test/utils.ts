@@ -5,7 +5,6 @@ import {MySql, MySqlOptions} from "../lib/mysql";
 export function getYaml(path: string): any | any[] {
     const results = Yaml.load(path);
     let filtered = results
-        .filter(x => !!x)
         .map(x => {
             // overrideAll has some tpl using text, like:
             // extraVolumeMounts: |

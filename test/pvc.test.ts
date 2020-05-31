@@ -20,7 +20,7 @@ describe('pvc', () => {
 
     describe('using variant-2.yaml', () => {
         let options: MySqlOptions = getYaml('src/variant-2.yaml');
-        it(`pvc not created`, () => {
+        it(`pvc not created because existing claim is provided`, () => {
             checkVariant(options, byResourceType, 'test/variant-2.snapshot.yaml');
         });
     });
@@ -29,6 +29,12 @@ describe('pvc', () => {
         let options: MySqlOptions = getYaml('src/variant-3.yaml');
         it(`pvc created with storage class`, () => {
             checkVariant(options, byResourceType, 'test/variant-3.snapshot.yaml');
+        });
+    });
+    describe('using variant-4.yaml', () => {
+        let options: MySqlOptions = getYaml('src/variant-4.yaml');
+        it(`pvc not created becaues persistence is disabled`, () => {
+            checkVariant(options, byResourceType, 'test/variant-4.snapshot.yaml');
         });
     });
 });
