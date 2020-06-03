@@ -3,7 +3,13 @@ import * as jsyaml from 'js-yaml';
 import {MySql, MySqlOptions} from "../lib/mysql";
 
 export function getYaml(path: string): any | any[] {
-    const results = Yaml.load(path);
+    let results: any[];
+    try {
+        results = Yaml.load(path);
+
+    } catch (err) {
+        throw new Error(`Could not open values file ${path}. Please confirm the path and try again.`);
+    }
     let filtered = results
         .map(x => {
             // overrideAll has some tpl using text, like:

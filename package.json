@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "import": "cdk8s import",
-    "synth": "cdk8s synth",
+    "synth": "node main.js",
     "clean": "",
     "compile": "tsc",
     "watch": "tsc -w",
@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "cdk8s": "^0.24.0",
-    "constructs": "^2.0.1"
+    "constructs": "^2.0.1",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/jest": "^25.2.3",

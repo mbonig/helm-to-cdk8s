@@ -1,18 +1,24 @@
 import {Construct} from 'constructs';
 import {App, Chart} from 'cdk8s';
-import {getYaml} from "./test/utils";
-import {MySql} from "./lib/mysql";
+import {MySql, MySqlOptions} from "./lib/mysql";
+import {getNamespace, getReleaseName, getValues} from "./lib/utils";
 
-class MyChart extends Chart {
-    constructor(scope: Construct, name: string) {
-        super(scope, name);
+interface MySqlChartOptions {
+    values: MySqlOptions;
+    namespace?: string;
+}
 
-        // define resources here
-        const values = getYaml('src/variant-1.yaml');
+class MySqlChart extends Chart {
+    constructor(scope: Construct, name: string, {values, namespace}: MySqlChartOptions) {
+        super(scope, name, {namespace});
         new MySql(this, 'mysql', values);
     }
 }
 
 const app = new App();
-new MyChart(app, 'cdk8s-migration');
+const values = getValues();
+let releaseName = getReleaseName() ;
+let namespace = getNamespace();
+
+new MySqlChart(app, releaseName, {values, namespace});
 app.synth();
